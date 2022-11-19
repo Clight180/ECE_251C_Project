@@ -1,0 +1,37 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="24">
+            <item index="0" class="java.lang.String" itemvalue="patoolib" />
+            <item index="1" class="java.lang.String" itemvalue="patool" />
+            <item index="2" class="java.lang.String" itemvalue="pydicom" />
+            <item index="3" class="java.lang.String" itemvalue="pyDataverse" />
+            <item index="4" class="java.lang.String" itemvalue="torch-summary" />
+            <item index="5" class="java.lang.String" itemvalue="matplotlib" />
+            <item index="6" class="java.lang.String" itemvalue="numpy" />
+            <item index="7" class="java.lang.String" itemvalue="torchmetrics" />
+            <item index="8" class="java.lang.String" itemvalue="gradio" />
+            <item index="9" class="java.lang.String" itemvalue="diffusers" />
+            <item index="10" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="11" class="java.lang.String" itemvalue="imageio-ffmpeg" />
+            <item index="12" class="java.lang.String" itemvalue="datasets" />
+            <item index="13" class="java.lang.String" itemvalue="omegaconf" />
+            <item index="14" class="java.lang.String" itemvalue="albumentations" />
+            <item index="15" class="java.lang.String" itemvalue="kornia" />
+            <item index="16" class="java.lang.String" itemvalue="pytorch-lightning" />
+            <item index="17" class="java.lang.String" itemvalue="torch-fidelity" />
+            <item index="18" class="java.lang.String" itemvalue="imageio" />
+            <item index="19" class="java.lang.String" itemvalue="pudb" />
+            <item index="20" class="java.lang.String" itemvalue="test-tube" />
+            <item index="21" class="java.lang.String" itemvalue="webdataset" />
+            <item index="22" class="java.lang.String" itemvalue="fire" />
+            <item index="23" class="java.lang.String" itemvalue="einops" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
