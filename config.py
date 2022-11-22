@@ -10,7 +10,7 @@ savedFigsPath = './saved_figs'
 
 
 # Feature handling
-DWT_Input = False
+DWT_Input = True
 model_Choice = 'Basic' # 'Basic', 'PLOSONE'
 modelNum = 000 # Set to pre-existing model to avoid training from epoch 1 , ow 000
 datasetID = 000 # Set to pre-existing dataset to avoid generating a new one, ow 000
@@ -40,7 +40,7 @@ import model_PLOSONE
 
 
 # Runtime vars
-numChannels = 12 if DWT_Input else 3 # 36 for 3 color channels, 12 wide wavelet packet // 3 if no DWT
+numChannels = 36 if DWT_Input else 3 # 36 for 3 color channels, 12 wide wavelet packet // 3 if no DWT
 imDims = 121 if DWT_Input else 460
 dimFolder = '/imSize_{}/'.format(imDims)
 anglesFolder = '/nAngles_{}/'.format(numChannels)

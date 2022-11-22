@@ -13,27 +13,23 @@ class DCNN(nn.Module):
         self.A = nn.Sequential(
             nn.Conv2d(channelsIn, 16, (3,3), padding=Padding),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
             nn.BatchNorm2d(16)
         )
 
         self.B = nn.Sequential(
             nn.Conv2d(16, 32, (3,3), padding=Padding),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
             nn.BatchNorm2d(32),
             nn.Conv2d(32, 64, (3, 3), padding=Padding),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
             nn.BatchNorm2d(64)
         )
 
         self.D = nn.Sequential(
             nn.Conv2d(64, 64, (3,3), padding=Padding),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
             nn.BatchNorm2d(64),
-            nn.Conv2d(64, 64, (3, 3), padding=Padding),
+            nn.Conv2d(64, 32, (3, 3), padding=Padding),
             nn.ReLU(),
             nn.BatchNorm2d(64),
         )
@@ -58,6 +54,6 @@ class DCNN(nn.Module):
         x2 = self.B(x1)
         x3 = self.D(x2)
         x4 = self.f1(x3)
-        # x5 = self.f2(x4)
-        x6 = self.f3(x4)
+        x5 = self.f2(x4)
+        x6 = self.f3(x5)
         return x6

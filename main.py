@@ -2,6 +2,7 @@ import sys
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import torchvision
 from DatasetGenerator_DWT import BreaKHis_DS_DWT
 from DatasetGenerator_NoDWT import BreaKHis_DS_NoDWT
 from torch.utils.data import DataLoader
@@ -27,15 +28,23 @@ def Experiment():
     ### Constructing data handlers ###
     print('Loading training data.')
     if config.DWT_Input:
-        train_dataset = BreaKHis_DS_DWT(datasetID=config.datasetID)
+        total_dataset = BreaKHis_DS_DWT(datasetID=config.datasetID)
     else:
-        train_dataset = BreaKHis_DS_NoDWT(datasetID=config.datasetID)
+        total_dataset = BreaKHis_DS_NoDWT(datasetID=config.datasetID)
+
+    print('Splitting dataset into train and validation sets.')
+    benigns_idx, malignants_idx = total_dataset.classKeys()
+    train_b_idx = int(.8*len(benigns_idx))
+    train_m_idx = int(.8*len(malignants_idx))
+    train_benigns_idx, test_benigns_idx = torch.utils.data.random_split(benigns_idx, [train_b_idx,len(benigns_idx)-train_b_idx])
+    train_malignants_idx, test_malignants_idx = torch.utils.data.random_split(malignants_idx, [train_m_idx,len(malignants_idx)-train_m_idx])
+    train_dataset = torch.utils.data.Subset(total_dataset,list(train_benigns_idx) + list(train_malignants_idx))
+    test_dataset = torch.utils.data.Subset(total_dataset, list(test_benigns_idx) + list(test_malignants_idx))
 
     train_DL = DataLoader(train_dataset, batch_size=config.batchSize, shuffle=True)
-    print('Loading testing data.')
-    if config.useValidation:
-        test_dataset = BreaKHis_DS_DWT(datasetID=config.datasetID)
-        test_DL = DataLoader(test_dataset, batch_size=config.batchSize)
+    test_DL = DataLoader(test_dataset, shuffle=True)
+
+    print("Dataloaders created. \nTrain set size: {} \nTest set size: {}".format(len(train_DL.dataset), len(test_DL.dataset)))
 
 
     print('Time of dataset completion: {:.2f}\nDataset ID: {}'.format(time.time()-start, config.datasetID))
@@ -67,6 +76,7 @@ def Experiment():
     trainLoss = []
     trainAccuracy = []
     validationLoss = []
+    validationAccuracy = []
     # bestModel = myNN.state_dict()
     torch.save(myNN.state_dict(), '{}NN_StateDict_{}.pt'.format('./savedModels/', myNN.modelId))
     config.modelNum = myNN.modelId
@@ -136,25 +146,30 @@ def Experiment():
         trainLoss.append(trainEpochLoss / n_batches)
         trainAccuracy.append(n_correct / len(train_dataset) * 100)
 
-        if config.useValidation:
-            ### validation batch testing ###
-            myNN.eval()
-            with torch.no_grad():
-                valEpochLoss = 0
-                n_batches = 0
-                for im_tup in tqdm(test_DL, desc="Batches", position=1):
-                    n_batches += 1
-                    im, label = im_tup[0], im_tup[1]
-                    input = im.to(device)
-                    label = label.to(device)
+        ### validation batch testing ###
+        myNN.eval()
+        with torch.no_grad():
+            valEpochLoss = 0
+            n_batches = 0
+            n_correct = 0
+            time.sleep(.01)
+            for im_tup in tqdm(test_DL, desc="Validation testing"):
+                time.sleep(.01)
+                n_batches += 1
+                im, labels = im_tup[0], Variable(im_tup[1])
+                input = Variable(im.to(device))
+                labels = Variable(labels.to(device))
 
-                    out = myNN(input)
-                    valBatchLoss = criterion(out, label)
-                    valEpochLoss += float(valBatchLoss)
-                    del input, label, out
-                validationLoss.append(valEpochLoss / n_batches)
-        else:
-            validationLoss.append(0)
+                out = myNN(input)
+                out = out.flatten()
+                labels = labels.type(dtype=out.dtype)
+                testBatchLoss = criterion(out, labels)
+                out_thresh = [1 if x >= 0 else 0 for x in out.cpu()]
+                n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh, labels.cpu())])
+                valEpochLoss += float(testBatchLoss.data)
+            validationLoss.append(valEpochLoss / n_batches)
+            validationAccuracy.append(n_correct / len(test_dataset) * 100)
+
 
         ### store best model ###
         if trainLoss[-1] < bestLoss:
@@ -165,7 +180,7 @@ def Experiment():
         print('{}/{} epochs completed. Train loss: {:.4f}, validation loss: {:.4f}'.format(epoch+1,config.num_epochs,
                                                                                    float(trainLoss[-1]),
                                                                                    float(validationLoss[-1])))
-        print('Train accuracy: {}'.format(trainAccuracy[-1]))
+        print('Train accuracy: {}, Test accuracy: {}'.format(trainAccuracy[-1], validationAccuracy[-1]))
 
     print('done')
     print('Time at training completion: {:.2f}'.format(time.time()-start))
@@ -178,13 +193,14 @@ def Experiment():
     ### Observing Results ###
 
     f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.plot(torch.linspace(1, config.num_epochs,steps=config.num_epochs), trainLoss, label='Train Loss')
-    # ax1.plot(validationLoss, label='Validation Loss')
-    # plt.legend(loc='upper right')
+    x = torch.linspace(1, config.num_epochs, steps=config.num_epochs)
+    ax1.plot(x, trainLoss, label='Train Loss')
+    ax1.plot(x, validationLoss, label='Validation Loss')
+    ax1.legend(loc='upper right')
     ax1.set_title('Loss')
-    ax2.plot(torch.linspace(1, config.num_epochs,steps=config.num_epochs), trainAccuracy, label='Train Accuracy')
-    # ax2.plot(validationAccuracy, label='Validation Accuracy')
-    # plt.legend(loc='lower right')
+    ax2.plot(x, trainAccuracy, label='Train Accuracy')
+    ax2.plot(x, validationAccuracy, label='Validation Accuracy')
+    ax2.legend(loc='lower right')
     ax2.set_title('Accuracy')
     f.suptitle('Model: {}, Model ID: {}, Dataset ID {}'.format(myNN.name, myNN.modelId,config.datasetID))
     plt.show()

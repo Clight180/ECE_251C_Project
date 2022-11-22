@@ -60,13 +60,13 @@ class BreaKHis_DS_DWT(torch.utils.data.Dataset):
                     DWT_outDir = Path(point / 'DWT Output')
                     point_sub = list(DWT_outDir.glob('*'))
 
-                    if len(point_sub) != self.numChannels:
+                    if len(point_sub) != self.numChannels/3:
                         print('Number of images for point: {} not correct!'.format(point))
                         continue
 
                     for pic_fileName in point_sub:
-                        grayImage = cv2.imread(str(pic_fileName), cv2.IMREAD_GRAYSCALE)
-                        im = toTensor(grayImage)
+                        im = cv2.imread(str(pic_fileName))
+                        im = toTensor(im)
                         try:
                             pointTensor = torch.cat((pointTensor, im))
                         except:
@@ -84,6 +84,11 @@ class BreaKHis_DS_DWT(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return (self.data[idx], self.pointMap[idx], idx)
+
+    def classKeys(self):
+        benign_idx = [i for i in self.pointMap if self.pointMap[i]==0]
+        malignant_idx = [i for i in self.pointMap if self.pointMap[i]==1]
+        return benign_idx, malignant_idx
 
 # data = BreaKHis_Dataset()
 # data.stackTensor()
