@@ -8,5 +8,7 @@ https://medium.com/dataseries/k-fold-cross-validation-with-pytorch-and-sklearn-d
 To Do:
 
 * Test half precision?
+https://github.com/NVIDIA/apex
+https://arxiv.org/abs/1710.03740
 * Model Design/Tuning
 * QOL stuff

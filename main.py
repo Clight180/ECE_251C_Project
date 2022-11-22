@@ -2,11 +2,10 @@ import sys
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import model
-# from DatasetGenerator import BreaKHis_Dataset
-from DatasetGenerator_Matlab_Handoff import BreaKHis_Dataset
+from DatasetGenerator_DWT import BreaKHis_DS_DWT
+from DatasetGenerator_NoDWT import BreaKHis_DS_NoDWT
 from torch.utils.data import DataLoader
-from torchsummary import summary
+import torchsummary as ts
 import time
 from tqdm import tqdm
 import config
@@ -27,20 +26,23 @@ def Experiment():
 
     ### Constructing data handlers ###
     print('Loading training data.')
-    train_dataset = BreaKHis_Dataset(datasetID=config.datasetID,dsize=config.trainSize,saveDataset=True)
-    train_dataset.stackTensor()
-    train_DL = DataLoader(train_dataset, batch_size=config.batchSize)
+    if config.DWT_Input:
+        train_dataset = BreaKHis_DS_DWT(datasetID=config.datasetID)
+    else:
+        train_dataset = BreaKHis_DS_NoDWT(datasetID=config.datasetID)
+
+    train_DL = DataLoader(train_dataset, batch_size=config.batchSize, shuffle=True)
     print('Loading testing data.')
     if config.useValidation:
-        test_dataset = BreaKHis_Dataset(datasetID=config.datasetID,dsize=config.trainSize,saveDataset=True)
-        test_dataset.stackTensor()
+        test_dataset = BreaKHis_DS_DWT(datasetID=config.datasetID)
         test_DL = DataLoader(test_dataset, batch_size=config.batchSize)
 
 
     print('Time of dataset completion: {:.2f}\nDataset ID: {}'.format(time.time()-start, config.datasetID))
 
     ### Constructing NN ###
-    myNN = model.DCNN(channelsIn=config.numChannels, filtSize=config.imDims)
+    myNN = config.model
+
     if config.modelNum != 000:
         myNN.load_state_dict(torch.load('{}/NN_StateDict_{}.pt'.format(config.savedModelsPath, config.modelNum)))
         myNN.modelId = config.modelNum
@@ -50,15 +52,16 @@ def Experiment():
         config.experimentFolder = '/Dataset_{}_Model_{}/'.format(config.datasetID, config.modelNum)
         print('Model generated. Model ID: {}'.format(myNN.modelId))
 
-    if config.showSummary:
-        summary(myNN, (config.numChannels, config.imDims, config.imDims))
     myNN.to(device)
+    if config.showSummary:
+        ts.summary(myNN, (config.numChannels, config.imDims, config.imDims))
+
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(myNN.parameters(), lr=config.learningRate, betas=(.9, .999), amsgrad=config.AMSGRAD)
 
-    scaler = None
-    if config.halfSize:
-        scaler = torch.cuda.amp.GradScaler()
+    # scaler = None
+    # if config.halfSize:
+    #     scaler = torch.cuda.amp.GradScaler()
 
     ### training metrics ###
     trainLoss = []
@@ -71,7 +74,6 @@ def Experiment():
     bestLoss = 10e10
 
     ### training routine ###
-    initialSummary = True
     if config.showSummary:
         print(torch.cuda.memory_summary())
         print(torch.cuda.memory_snapshot())
@@ -84,7 +86,9 @@ def Experiment():
         n_correct = 0
         ### train batch training ###
         n_batches = 0
+        time.sleep(.01)
         for im_tup in tqdm(train_DL, desc="Batches"):
+            time.sleep(.01)
             n_batches += 1
             im, labels = im_tup[0], Variable(im_tup[1])
             input = Variable(im.to(device))
@@ -96,10 +100,14 @@ def Experiment():
                 with torch.cuda.amp.autocast():
                     out = myNN(input)
                     out = out.flatten()
+                    labels = labels.type(dtype=out.dtype)
                     trainBatchLoss = criterion(out, labels)
-                    scaler.scale(trainBatchLoss).backward()
-                    scaler.unscale_(optimizer)
+                    trainBatchLoss.backward()
+                    # scaler.scale(trainBatchLoss).backward()
+                    # scaler.unscale_(optimizer)
                     torch.nn.utils.clip_grad_norm_(myNN.parameters(), config.max_norm)
+                    out_thresh = [1 if x >= 0 else 0 for x in out.cpu()]
+                    n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh, labels.cpu())])
 
             else:
                 out = myNN(input)
@@ -110,12 +118,16 @@ def Experiment():
                 out_thresh = [1 if x >= 0 else 0 for x in out.cpu()]
                 n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh,labels.cpu())])
 
+            del(out)
+            del(labels)
+            torch.cuda.empty_cache()
 
-            if config.halfSize:
-                scaler.step(optimizer)
-                scaler.update()
-            else:
-                optimizer.step()
+            # if config.halfSize:
+            #     scaler.step(optimizer)
+            #     scaler.update()
+            # else:
+            #     optimizer.step()
+            optimizer.step()
 
             trainEpochLoss += float(trainBatchLoss.data)
 
@@ -166,14 +178,15 @@ def Experiment():
     ### Observing Results ###
 
     f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.plot(trainLoss, label='Train Loss')
+    ax1.plot(torch.linspace(1, config.num_epochs,steps=config.num_epochs), trainLoss, label='Train Loss')
     # ax1.plot(validationLoss, label='Validation Loss')
-    plt.legend(loc='upper right')
+    # plt.legend(loc='upper right')
     ax1.set_title('Loss')
-    ax2.plot(trainAccuracy, label='Train Accuracy')
+    ax2.plot(torch.linspace(1, config.num_epochs,steps=config.num_epochs), trainAccuracy, label='Train Accuracy')
     # ax2.plot(validationAccuracy, label='Validation Accuracy')
+    # plt.legend(loc='lower right')
     ax2.set_title('Accuracy')
-    f.suptitle('Model ID: {}, Dataset ID {}'.format(myNN.modelId,config.datasetID))
+    f.suptitle('Model: {}, Model ID: {}, Dataset ID {}'.format(myNN.name, myNN.modelId,config.datasetID))
     plt.show()
 
 

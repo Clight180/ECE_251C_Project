@@ -7,10 +7,11 @@ import torchvision.transforms as transforms
 from pathlib import Path
 import numpy as np
 import pickle as pkl
+import time
 
 labels = ['benign', 'malignant']
 
-class BreaKHis_Dataset(torch.utils.data.Dataset):
+class BreaKHis_DS_DWT(torch.utils.data.Dataset):
     def __init__(self,datasetID=000, dsize=10, saveDataset=False):
         self.imDims = config.imDims # square
         self.numChannels = config.numChannels
@@ -25,6 +26,7 @@ class BreaKHis_Dataset(torch.utils.data.Dataset):
             config.datasetID = self.datasetID
             self.imDir = fd.askdirectory(initialdir=self.cwd, title='Directory of images for DCNN handoff')
         self.pointMap = {}
+        self.stackTensor()
 
     def stackTensor(self):
         if self.loadDS:
@@ -44,9 +46,11 @@ class BreaKHis_Dataset(torch.utils.data.Dataset):
             # create a hash map and stack into data tensor
 
             for folder in imDir_sub:
-                points = folder.glob('*')
+                points = list(folder.glob('*'))
                 print('\nProcessing {}'.format(folder.name))
+                time.sleep(.01)
                 for point in tqdm(points):
+                    time.sleep(.01)
                     pointTensor = torch.empty((0, self.imDims, self.imDims))
                     if labels[0] in str(folder):
                         self.pointMap[pointMap_Idx] = 0

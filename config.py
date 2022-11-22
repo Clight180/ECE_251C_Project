@@ -1,5 +1,6 @@
 import torch
 
+
 # File handling:
 processedImsPath = './processed_images/'
 rawImsPath = './raw_images/'
@@ -9,10 +10,8 @@ savedFigsPath = './saved_figs'
 
 
 # Feature handling
-numChannels = 12 # 36 for 3 color channels, 12 wide wavelet packet
-imDims = 120 # square, 460/4
-trainSize = 800
-testSize = int(trainSize*.2)
+DWT_Input = False
+model_Choice = 'Basic' # 'Basic', 'PLOSONE'
 modelNum = 000 # Set to pre-existing model to avoid training from epoch 1 , ow 000
 datasetID = 000 # Set to pre-existing dataset to avoid generating a new one, ow 000
 showSummary = False
@@ -21,23 +20,33 @@ useValidation = False
 
 
 # Hyperparameters:
-num_epochs = 20
-batchSize = 20
+num_epochs = 10
+batchSize = 5
 learningRate = 1e-6
 weightDecay = 1e-5
 AMSGRAD = True
-LRS_Gamma = .995
 
 
 # GPU acceleration:
 USE_GPU = True
 halfSize = False
 max_norm = .5
-dtype = torch.float16 if halfSize else torch.float32
+
+if halfSize:
+    torch.set_default_dtype(torch.half)
+
+import model_Basic
+import model_PLOSONE
 
 
 # Runtime vars
-theta = None
+numChannels = 12 if DWT_Input else 3 # 36 for 3 color channels, 12 wide wavelet packet // 3 if no DWT
+imDims = 121 if DWT_Input else 460
 dimFolder = '/imSize_{}/'.format(imDims)
 anglesFolder = '/nAngles_{}/'.format(numChannels)
 experimentFolder = '/Dataset_{}_Model_{}/'.format(datasetID,modelNum)
+
+if model_Choice == 'Basic':
+    model = model_Basic.DCNN(channelsIn=numChannels)
+else:
+    model = model_PLOSONE.DCNN(channelsIn=numChannels)
