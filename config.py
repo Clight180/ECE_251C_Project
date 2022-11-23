@@ -1,5 +1,5 @@
-import torch
-
+import model_Basic
+import model_PLOSONE
 
 # File handling:
 processedImsPath = './processed_images/'
@@ -13,17 +13,17 @@ savedFigsPath = './saved_figs'
 DWT_Input = True
 model_Choice = 'Basic' # 'Basic', 'PLOSONE'
 modelNum = 000 # Set to pre-existing model to avoid training from epoch 1 , ow 000
-datasetID = 000 # Set to pre-existing dataset to avoid generating a new one, ow 000
-showSummary = False
+datasetID = 198 # Set to pre-existing dataset to avoid generating a new one, ow 000
+datasetSize = -1 # -1 for use whole dataset, ow your choice
+showSummary = True
 printFigs = True
-useValidation = False
 
 
 # Hyperparameters:
-num_epochs = 10
-batchSize = 5
-learningRate = 1e-6
-weightDecay = 1e-5
+num_epochs = 30
+batchSize = 20
+learningRate = 1e-7
+weightDecay = 1e-3
 AMSGRAD = True
 
 
@@ -31,12 +31,6 @@ AMSGRAD = True
 USE_GPU = True
 halfSize = False
 max_norm = .5
-
-if halfSize:
-    torch.set_default_dtype(torch.half)
-
-import model_Basic
-import model_PLOSONE
 
 
 # Runtime vars

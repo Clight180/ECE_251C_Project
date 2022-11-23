@@ -78,5 +78,10 @@ class BreaKHis_DS_NoDWT(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return (self.data[idx], self.pointMap[idx], idx)
 
+    def classKeys(self):
+        benign_idx = [i for i in self.pointMap if self.pointMap[i]==0]
+        malignant_idx = [i for i in self.pointMap if self.pointMap[i]==1]
+        return benign_idx, malignant_idx
+
 # data = BreaKHis_Dataset()
 # data.stackTensor()
