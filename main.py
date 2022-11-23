@@ -16,7 +16,7 @@ import gc
 
 def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, valMaligFold=None, KFC=False):
     start = time.time()
-
+    experimentID = np.random.randint(100, 999)
     ##### PRE-TRAINING SETUP #####
 
     if config.USE_GPU and torch.cuda.is_available():
@@ -52,8 +52,8 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
         test_benigns_idx = valBenignFold
         test_malignants_idx = valMaligFold
     else:
-        train_b_quant = int(.8*len(benigns_idx))
-        train_m_quant = int(.8*len(malignants_idx)) # Should be same number but why not
+        train_b_quant = int(.7*len(benigns_idx))
+        train_m_quant = int(.7*len(malignants_idx)) # Should be same number but why not
         train_benigns_idx, test_benigns_idx = torch.utils.data.random_split(benigns_idx, [train_b_quant,len(benigns_idx)-train_b_quant])
         train_malignants_idx, test_malignants_idx = torch.utils.data.random_split(malignants_idx, [train_m_quant,len(malignants_idx)-train_m_quant])
 
@@ -84,6 +84,8 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
 
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(myNN.parameters(), lr=config.learningRate, betas=(.9, .999), weight_decay=config.weightDecay, amsgrad=config.AMSGRAD)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config.lrs_Gamma)
+
 
     scaler = None
     if config.halfSize:
@@ -155,7 +157,7 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
             del(out)
             del(labels)
             del(input)
-            del(trainBatchLoss)
+            # del(trainBatchLoss) # Don't do this...........
             if config.USE_GPU:
                 gc.collect()
                 torch.cuda.empty_cache()
@@ -168,7 +170,7 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
             # optimizer.step()
 
 
-        # scheduler.step()
+        scheduler.step()
         trainLoss.append(trainEpochLoss / n_batches)
         trainAccuracy.append(n_correct / len(train_dataset) * 100)
 
@@ -235,7 +237,7 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
     ax2.plot(x, validationAccuracy, label='Validation Accuracy')
     ax2.legend(loc='lower right')
     ax2.set_title('Accuracy')
-    f.suptitle('Model: {}, With DWT: {}, Dataset ID {}'.format(myNN.name, config.DWT_Input,config.datasetID))
+    f.suptitle('Exp ID: {}, Dataset ID {}, With DWT: {}'.format(experimentID,config.datasetID, config.DWT_Input))
     plt.show()
 
 
@@ -268,8 +270,8 @@ if __name__ == '__main__':
         else:
             splitQuant = maxSize_singleClass
 
-        benigns_idx, _ = torch.utils.data.random_split(benigns_idx, [splitQuant, maxSize_singleClass - splitQuant])
-        malignants_idx, _ = torch.utils.data.random_split(malignants_idx, [splitQuant, maxSize_singleClass - splitQuant])
+        benigns_idx, unused_benings = torch.utils.data.random_split(benigns_idx, [splitQuant, maxSize_singleClass - splitQuant])
+        malignants_idx, unused_maligs = torch.utils.data.random_split(malignants_idx, [splitQuant, maxSize_singleClass - splitQuant])
 
         fold_unit_quant = int(splitQuant / numK)
         CV_TrainLoss = np.array([0]*config.num_epochs)
@@ -277,8 +279,9 @@ if __name__ == '__main__':
         CV_ValLoss = np.array([0]*config.num_epochs)
         CV_ValAcc = np.array([0]*config.num_epochs)
         for k_th_fold in range(numK):
-            benignFolds = torch.utils.data.random_split(benigns_idx, [fold_unit_quant] * numK + [maxSize_singleClass-fold_unit_quant*numK])
-            malignantFolds = torch.utils.data.random_split(malignants_idx, [fold_unit_quant] * numK + [maxSize_singleClass-fold_unit_quant*numK])
+            config.modelNum = 000
+            benignFolds = torch.utils.data.random_split(benigns_idx, [fold_unit_quant] * numK + [maxSize_singleClass-len(unused_benings)-fold_unit_quant*numK])
+            malignantFolds = torch.utils.data.random_split(malignants_idx, [fold_unit_quant] * numK + [maxSize_singleClass-len(unused_benings)-fold_unit_quant*numK])
 
             val_b_folds = benignFolds[k_th_fold]
             val_m_folds = malignantFolds[k_th_fold]
@@ -288,10 +291,20 @@ if __name__ == '__main__':
             train_m_folds = torch.utils.data.ConcatDataset(malignantFolds)
             args = (train_b_folds, train_m_folds, val_b_folds,val_m_folds, KFC)
             expTrainLoss, expTrainAccuracy, expValidationLoss, expValidationAccuracy = Experiment(args)
-            CV_TrainLoss = CV_TrainLoss + np.array(expTrainLoss)
-            CV_TrainAcc = CV_TrainAcc + np.array(expTrainAccuracy)
-            CV_ValLoss = CV_ValLoss + np.array(expValidationLoss)
-            CV_ValAcc = CV_ValAcc + np.array(expValidationAccuracy)
+            ExpTL = np.array(expTrainLoss)
+            ExpTA = np.array(expTrainAccuracy)
+            ExpVL = np.array(expValidationLoss)
+            ExpVA = np.array(expValidationAccuracy)
+
+            np.savetxt("Train_Loss_{}.csv".format(k_th_fold), ExpTL)
+            np.savetxt("Train_Accuracy_{}.csv".format(k_th_fold), ExpTA)
+            np.savetxt("Val_Loss_{}.csv".format(k_th_fold), ExpVL)
+            np.savetxt("Val_Acc_{}.csv".format(k_th_fold), ExpVA)
+
+            CV_TrainLoss = CV_TrainLoss + ExpTL
+            CV_TrainAcc = CV_TrainAcc + ExpTA
+            CV_ValLoss = CV_ValLoss + ExpVL
+            CV_ValAcc = CV_ValAcc + ExpVA
 
         f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
         x = torch.linspace(1, config.num_epochs, steps=config.num_epochs)
@@ -304,7 +317,7 @@ if __name__ == '__main__':
         ax2.plot(x, CV_ValAcc/numK, label='Validation Accuracy')
         ax2.legend(loc='lower right')
         ax2.set_title('Accuracy')
-        f.suptitle('{} fold CV, With DWT: {}, Dataset ID {}'.format(numK, config.DWT_Input, config.datasetID))
+        f.suptitle('{} fold CV, Dataset ID {}, With DWT: {}'.format(numK, config.datasetID, config.DWT_Input))
         plt.show()
     else:
         print('Running experiment with config.py specifications...')

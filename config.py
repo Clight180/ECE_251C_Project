@@ -1,5 +1,6 @@
 import model_Basic
 import model_PLOSONE
+import model_Experimental
 
 # File handling:
 processedImsPath = './processed_images/'
@@ -10,20 +11,21 @@ savedFigsPath = './saved_figs'
 
 
 # Feature handling
-DWT_Input = True
-model_Choice = 'Basic' # 'Basic', 'PLOSONE'
+DWT_Input = False
+model_Choice = 'Experimental' # 'Basic', 'PLOSONE', 'Experimental'
 modelNum = 000 # Set to pre-existing model to avoid training from epoch 1 , ow 000
-datasetID = 198 # Set to pre-existing dataset to avoid generating a new one, ow 000
+datasetID = 317 # Set to pre-existing dataset to avoid generating a new one, ow 000
 datasetSize = -1 # -1 for use whole dataset, ow your choice
 showSummary = True
 printFigs = True
 
 
 # Hyperparameters:
-num_epochs = 30
-batchSize = 20
-learningRate = 1e-7
-weightDecay = 1e-3
+num_epochs = 25
+batchSize = 80
+learningRate = 5e-4
+lrs_Gamma = .93
+weightDecay = 1e-7
 AMSGRAD = True
 
 
@@ -42,5 +44,8 @@ experimentFolder = '/Dataset_{}_Model_{}/'.format(datasetID,modelNum)
 
 if model_Choice == 'Basic':
     model = model_Basic.DCNN(channelsIn=numChannels)
-else:
+elif model_Choice == 'PLOSONE':
     model = model_PLOSONE.DCNN(channelsIn=numChannels)
+elif model_Choice == 'Experimental':
+    model = model_Experimental.DCNN(channelsIn=numChannels)
+
