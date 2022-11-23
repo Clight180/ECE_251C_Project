@@ -13,6 +13,7 @@ from tqdm import tqdm
 import config
 from torch.autograd import Variable
 import gc
+import model_Basic, model_Experimental, model_PLOSONE
 
 def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, valMaligFold=None, KFC=False):
     start = time.time()
@@ -280,6 +281,14 @@ if __name__ == '__main__':
         CV_ValAcc = np.array([0]*config.num_epochs)
         for k_th_fold in range(numK):
             config.modelNum = 000
+
+            if config.model_Choice == 'Basic':
+                config.model = model_Basic.DCNN(channelsIn=config.numChannels)
+            elif config.model_Choice == 'PLOSONE':
+                config.model = model_PLOSONE.DCNN(channelsIn=config.numChannels)
+            elif config.model_Choice == 'Experimental':
+                config.model = model_Experimental.DCNN(channelsIn=config.numChannels)
+
             benignFolds = torch.utils.data.random_split(benigns_idx, [fold_unit_quant] * numK + [maxSize_singleClass-len(unused_benings)-fold_unit_quant*numK])
             malignantFolds = torch.utils.data.random_split(malignants_idx, [fold_unit_quant] * numK + [maxSize_singleClass-len(unused_benings)-fold_unit_quant*numK])
 
