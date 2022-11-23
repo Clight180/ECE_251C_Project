@@ -21,11 +21,11 @@ printFigs = True
 
 
 # Hyperparameters:
-num_epochs = 25
-batchSize = 80
+num_epochs = 30
+batchSize = 300
 learningRate = 5e-4
 lrs_Gamma = .93
-weightDecay = 1e-7
+weightDecay = 1e-4
 AMSGRAD = True
 
 

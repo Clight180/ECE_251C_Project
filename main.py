@@ -113,7 +113,40 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
     ##### TRAINING ROUTINE #####
 
     for epoch in range(config.num_epochs):
+
+        ### validation batch testing ###
+        myNN.eval()
+        with torch.no_grad():
+            valEpochLoss = 0
+            n_batches = 0
+            n_correct = 0
+            time.sleep(.01)
+            for im_tup in tqdm(test_DL, desc="Validation testing"):
+                time.sleep(.01)
+                n_batches += 1
+                im, labels = im_tup[0], Variable(im_tup[1])
+                input = Variable(im.to(device))
+                labels = Variable(labels.to(device))
+
+                out = myNN(input)
+                out = out.flatten()
+                labels = labels.type(dtype=out.dtype)
+                testBatchLoss = criterion(out, labels)
+                out_thresh = [1 if x >= 0 else 0 for x in out.detach()]
+                n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh, labels.detach())])
+                valEpochLoss += float(testBatchLoss)
+            validationLoss.append(valEpochLoss / n_batches)
+            validationAccuracy.append(n_correct / len(test_dataset) * 100)
+            del (out)
+            del (labels)
+            del (testBatchLoss)
+            if config.USE_GPU:
+                gc.collect()
+                torch.cuda.empty_cache()
+
+
         myNN.train()
+
         trainEpochLoss = 0
         n_correct = 0
         ### train batch training ###
@@ -175,35 +208,7 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
         trainLoss.append(trainEpochLoss / n_batches)
         trainAccuracy.append(n_correct / len(train_dataset) * 100)
 
-        ### validation batch testing ###
-        myNN.eval()
-        with torch.no_grad():
-            valEpochLoss = 0
-            n_batches = 0
-            n_correct = 0
-            time.sleep(.01)
-            for im_tup in tqdm(test_DL, desc="Validation testing"):
-                time.sleep(.01)
-                n_batches += 1
-                im, labels = im_tup[0], Variable(im_tup[1])
-                input = Variable(im.to(device))
-                labels = Variable(labels.to(device))
 
-                out = myNN(input)
-                out = out.flatten()
-                labels = labels.type(dtype=out.dtype)
-                testBatchLoss = criterion(out, labels)
-                out_thresh = [1 if x >= 0 else 0 for x in out.detach()]
-                n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh, labels.detach())])
-                valEpochLoss += float(testBatchLoss)
-            validationLoss.append(valEpochLoss / n_batches)
-            validationAccuracy.append(n_correct / len(test_dataset) * 100)
-            del (out)
-            del (labels)
-            del(testBatchLoss)
-            if config.USE_GPU:
-                gc.collect()
-                torch.cuda.empty_cache()
 
 
         ### store best model ###

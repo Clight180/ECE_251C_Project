@@ -8,27 +8,27 @@ Padding = 1
 class DCNN(nn.Module):
     def __init__(self,channelsIn):
         super(DCNN,self).__init__()
-        n_Flatten = 12800 if config.DWT_Input else 103968
+        n_Flatten = 28800 if config.DWT_Input else 46208
         self.name = "Experimental"
-        filt1 = 16
-        filt2 = 32
+        filt1 = 8
+        filt2 = 16
+        filt3 = 32
         self.modelId = np.random.randint(100,999)
 
         self.c1 = nn.Sequential(
             nn.Conv2d(channelsIn, filt1, kernelSize, padding=Padding),
+            nn.MaxPool2d((3,3)),
             nn.ReLU()
         )
         self.c2 = nn.Sequential(
-            nn.Conv2d(filt1, filt1, kernelSize, padding=Padding),
-            nn.BatchNorm2d(filt1),
+            nn.Conv2d(filt1, filt2, kernelSize, padding=Padding),
             nn.ReLU(),
-            nn.Dropout(.1),
             nn.MaxPool2d((2,2))
         )
         self.c3 = nn.Sequential(
-            nn.Conv2d(filt1, filt1, kernelSize, padding=Padding),
-            nn.BatchNorm2d(filt1),
-            nn.ReLU()
+            nn.Conv2d(filt2, filt3, kernelSize, padding=Padding),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2))
         )
         # self.c4 = nn.Sequential(
         #     nn.Conv2d(filt1, filt1, kernelSize, padding=Padding),
@@ -65,24 +65,23 @@ class DCNN(nn.Module):
         #     nn.BatchNorm2d(filt1),
         #     nn.ReLU()
         # )
-        self.c11 = nn.Sequential(
-            nn.Conv2d(filt1, filt2, kernelSize, padding=Padding),
-            nn.BatchNorm2d(filt2),
-            nn.ReLU(),
-            nn.MaxPool2d((2,2))
-        )
-        self.c12 = nn.Sequential(
-            nn.Conv2d(filt2, filt2, kernelSize, padding=Padding),
-            nn.BatchNorm2d(filt2),
-            nn.ReLU(),
-            nn.Dropout(.1)
-        )
-        self.c13 = nn.Sequential(
-            nn.Conv2d(filt2, filt2, kernelSize, padding=Padding),
-            nn.BatchNorm2d(filt2),
-            nn.ReLU(),
-            nn.MaxPool2d((2,2))
-        )
+        # self.c11 = nn.Sequential(
+        #     nn.Conv2d(filt1, filt2, kernelSize, padding=Padding),
+        #     nn.BatchNorm2d(filt2),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d((2,2))
+        # )
+        # self.c12 = nn.Sequential(
+        #     nn.Conv2d(filt2, filt2, kernelSize, padding=Padding),
+        #     nn.BatchNorm2d(filt2),
+        #     nn.ReLU(),
+        #     nn.Dropout(.1)
+        # )
+        # self.c13 = nn.Sequential(
+        #     nn.Conv2d(filt2, filt2, kernelSize, padding=Padding),
+        #     nn.BatchNorm2d(filt2),
+        #     nn.ReLU()
+        # )
         # self.c14 = nn.Sequential(
         #     nn.Conv2d(filt2, filt2, kernelSize, padding=Padding),
         #     nn.BatchNorm2d(filt2),
@@ -122,12 +121,12 @@ class DCNN(nn.Module):
         # x8 = self.c8(x7)
         # x9 = self.c9(x8)
         # x10 = self.c10(x9)
-        x11 = self.c11(x3)
-        x12 = self.c12(x11)
-        x13 = self.c13(x12)
+        # x11 = self.c11(x3)
+        # x12 = self.c12(x11)
+        # x13 = self.c13(x12)
         # x14 = self.c14(x13)
         # x15 = self.c15(x14)
         # x16 = self.c16(x15)
-        x17 = self.f1(x13)
+        x17 = self.f1(x3)
         x18 = self.f2(x17)
         return x18
