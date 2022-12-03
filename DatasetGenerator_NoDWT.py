@@ -41,7 +41,7 @@ class BreaKHis_DS_NoDWT(torch.utils.data.Dataset):
                 exit('Check specified imDir, needs just \'imDir/benign/\' and \'imdir/malignant\'')
 
             pointMap_Idx = 0
-            data = torch.empty((0, self.numChannels, self.imDims, self.imDims))  # What about color channels...?
+            data = torch.empty((0, self.numChannels, self.imDims, self.imDims))
             toTensor = transforms.ToTensor()
             # create a hash map and stack into data tensor
 
@@ -50,7 +50,12 @@ class BreaKHis_DS_NoDWT(torch.utils.data.Dataset):
                 print('\nProcessing {}'.format(folder.name))
                 time.sleep(.01)
                 for point in tqdm(points):
-                    time.sleep(.01)
+
+                    if config.NoiseLevelFolder not in list(point.glob('*')):
+                        print('{} folder not found for point: {}'.format(config.NoiseLevelFolder, point))
+                        pass
+                    point = point / config.NoiseLevelFolder
+
                     if labels[0] in str(folder):
                         self.pointMap[pointMap_Idx] = 0
                     else:

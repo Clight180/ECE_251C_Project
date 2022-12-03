@@ -12,7 +12,7 @@ import time
 labels = ['benign', 'malignant']
 
 class BreaKHis_DS_DWT(torch.utils.data.Dataset):
-    def __init__(self,datasetID=000, dsize=10, saveDataset=False):
+    def __init__(self,datasetID=000):
         self.imDims = config.imDims # square
         self.numChannels = config.numChannels
         self.cwd = Path.cwd()
@@ -41,7 +41,7 @@ class BreaKHis_DS_DWT(torch.utils.data.Dataset):
                 exit('Check specified imDir, needs just \'imDir/benign/\' and \'imdir/malignant\'')
 
             pointMap_Idx = 0
-            data = torch.empty((0, self.numChannels, self.imDims, self.imDims))  # What about color channels...?
+            data = torch.empty((0, self.numChannels, self.imDims, self.imDims))
             toTensor = transforms.ToTensor()
             # create a hash map and stack into data tensor
 
@@ -50,14 +50,23 @@ class BreaKHis_DS_DWT(torch.utils.data.Dataset):
                 print('\nProcessing {}'.format(folder.name))
                 time.sleep(.01)
                 for point in tqdm(points):
-                    time.sleep(.01)
+
+                    if config.NoiseLevelFolder not in [x.name for x in list(point.glob('*'))]:
+                        print('{} folder not found for point: {}'.format(config.NoiseLevelFolder, point))
+                        pass
+                    point = point / config.NoiseLevelFolder
+
+                    if config.DWTFolder not in [x.name for x in list(point.glob('*'))]:
+                        print('{} folder not found for point: {}'.format(config.DWTFolder, point))
+                        pass
+
                     pointTensor = torch.empty((0, self.imDims, self.imDims))
                     if labels[0] in str(folder):
                         self.pointMap[pointMap_Idx] = 0
                     else:
                         self.pointMap[pointMap_Idx] = 1
                     pointMap_Idx += 1
-                    DWT_outDir = Path(point / 'DWT Output')
+                    DWT_outDir = Path(point / config.DWTFolder)
                     point_sub = list(DWT_outDir.glob('*'))
 
                     if len(point_sub) != self.numChannels/3:

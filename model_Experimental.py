@@ -8,7 +8,7 @@ Padding = 1
 class DCNN(nn.Module):
     def __init__(self,channelsIn):
         super(DCNN,self).__init__()
-        n_Flatten = 28800 if config.DWT_Input else 46208
+        n_Flatten = 2592 if config.DWT_Input else 46208
         self.name = "Experimental"
         filt1 = 8
         filt2 = 16
@@ -17,8 +17,8 @@ class DCNN(nn.Module):
 
         self.c1 = nn.Sequential(
             nn.Conv2d(channelsIn, filt1, kernelSize, padding=Padding),
-            nn.MaxPool2d((3,3)),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.MaxPool2d((3, 3))
         )
         self.c2 = nn.Sequential(
             nn.Conv2d(filt1, filt2, kernelSize, padding=Padding),

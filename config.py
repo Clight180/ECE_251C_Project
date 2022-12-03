@@ -11,17 +11,19 @@ savedFigsPath = './saved_figs'
 
 
 # Feature handling
-DWT_Input = False
+DWT_Input = True
 model_Choice = 'Experimental' # 'Basic', 'PLOSONE', 'Experimental'
 modelNum = 000 # Set to pre-existing model to avoid training from epoch 1 , ow 000
-datasetID = 317 # Set to pre-existing dataset to avoid generating a new one, ow 000
+datasetID = 217 # Set to pre-existing dataset to avoid generating a new one, ow 000
 datasetSize = -1 # -1 for use whole dataset, ow your choice
 showSummary = True
 printFigs = True
+NoiseLevelFolder = 'no_noise'
+DWTFolder = 'dwt_haar'
 
 
 # Hyperparameters:
-num_epochs = 30
+num_epochs = 40
 batchSize = 300
 learningRate = 5e-4
 lrs_Gamma = .93
@@ -37,7 +39,7 @@ max_norm = .5
 
 # Runtime vars
 numChannels = 36 if DWT_Input else 3 # 36 for 3 color channels, 12 wide wavelet packet // 3 if no DWT
-imDims = 121 if DWT_Input else 460
+imDims = 115 if DWT_Input else 460
 dimFolder = '/imSize_{}/'.format(imDims)
 anglesFolder = '/nAngles_{}/'.format(numChannels)
 experimentFolder = '/Dataset_{}_Model_{}/'.format(datasetID,modelNum)
