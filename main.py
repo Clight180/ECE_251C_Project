@@ -14,6 +14,8 @@ import config
 from torch.autograd import Variable
 import gc
 import model_Basic, model_Experimental, model_PLOSONE
+import torchvision.transforms as transforms
+import torchvision
 
 def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, valMaligFold=None, KFC=False):
     start = time.time()
@@ -87,7 +89,6 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
     optimizer = torch.optim.Adam(myNN.parameters(), lr=config.learningRate, betas=(.9, .999), weight_decay=config.weightDecay, amsgrad=config.AMSGRAD)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config.lrs_Gamma)
 
-
     scaler = None
     if config.halfSize:
         scaler = torch.cuda.amp.GradScaler()
@@ -155,12 +156,35 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
         for im_tup in tqdm(train_DL, desc="Batches"):
             time.sleep(.01)
             n_batches += 1
-            im, labels = im_tup[0], Variable(im_tup[1])
+            ims, labels = im_tup[0], Variable(im_tup[1])
+            ims = ims.to(device)
+            labels = labels.to(device)
+
+            if config.imTransforms:
+                # transform images
+                for idx, im in enumerate(ims):
+                    HW = im[0].size()
+                    angle = np.random.poisson(lam=15)
+                    prob = .1
+                    flipH = np.random.choice([True, False], p=[prob, 1-prob])
+                    flipV = np.random.choice([True, False], p=[prob, 1-prob])
+                    rotateIm = np.random.choice([True, False], p=[prob, 1-prob])
+
+                    if flipH:
+                        im = transforms.functional.hflip(im)
+                    if flipV:
+                        im = transforms.functional.vflip(im)
+                    if rotateIm:
+                        im = transforms.functional.rotate(im, angle=angle, expand=True,
+                                                         interpolation=torchvision.transforms.InterpolationMode.BILINEAR)
+                        crop = transforms.CenterCrop(HW)
+                        im = crop(im)
+                        ims[idx] = im
 
             optimizer.zero_grad()
 
             if config.halfSize:
-                im = torch.tensor(im,dtype=torch.half)
+                im = torch.tensor(ims,dtype=torch.half)
                 labels = torch.tensor(labels, dtype=torch.half)
                 input = Variable(im.to(device))
                 labels = Variable(labels.to(device))
@@ -176,8 +200,8 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
                 n_correct += sum([1 if z[0] == z[1] else 0 for z in zip(out_thresh, labels.cpu())])
 
             else:
-                input = Variable(im.to(device))
-                labels = Variable(labels.to(device))
+                input = Variable(ims)
+                labels = Variable(labels)
                 out = myNN(input)
                 out = out.flatten()
                 labels = labels.type(dtype=out.dtype)

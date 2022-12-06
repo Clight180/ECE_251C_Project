@@ -8,7 +8,7 @@ Padding = 1
 class DCNN(nn.Module):
     def __init__(self,channelsIn):
         super(DCNN,self).__init__()
-        n_Flatten = 2592 if config.DWT_Input else 46208
+        n_Flatten = 3200 if config.DWT_Input else 46208
         self.name = "Experimental"
         filt1 = 8
         filt2 = 16
