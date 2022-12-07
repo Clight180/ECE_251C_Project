@@ -165,21 +165,22 @@ def Experiment(trainBenignFold=None, trainMaligFold=None, valBenignFold=None, va
                 for idx, im in enumerate(ims):
                     HW = im[0].size()
                     angle = np.random.poisson(lam=15)
-                    prob = .1
+                    prob = .2
+                    transformIm = np.random.choice([True, False], p=[prob, 1-prob])
                     flipH = np.random.choice([True, False], p=[prob, 1-prob])
                     flipV = np.random.choice([True, False], p=[prob, 1-prob])
                     rotateIm = np.random.choice([True, False], p=[prob, 1-prob])
-
-                    if flipH:
-                        im = transforms.functional.hflip(im)
-                    if flipV:
-                        im = transforms.functional.vflip(im)
-                    if rotateIm:
-                        im = transforms.functional.rotate(im, angle=angle, expand=True,
-                                                         interpolation=torchvision.transforms.InterpolationMode.BILINEAR)
-                        crop = transforms.CenterCrop(HW)
-                        im = crop(im)
-                        ims[idx] = im
+                    if transformIm:
+                        if flipH:
+                            im = transforms.functional.hflip(im)
+                        if flipV:
+                            im = transforms.functional.vflip(im)
+                        if rotateIm:
+                            im = transforms.functional.rotate(im, angle=angle, expand=True,
+                                                             interpolation=torchvision.transforms.InterpolationMode.BILINEAR)
+                            crop = transforms.CenterCrop(HW)
+                            im = crop(im)
+                            ims[idx] = im
 
             optimizer.zero_grad()
 

@@ -26,9 +26,9 @@ imTransforms = True
 # Hyperparameters:
 num_epochs = 200
 batchSize = 300
-learningRate = 4e-4
-lrs_Gamma = .9965
-weightDecay = 4e-4
+learningRate = 1e-3
+lrs_Gamma = .996
+weightDecay = 5e-3
 AMSGRAD = True
 
 
